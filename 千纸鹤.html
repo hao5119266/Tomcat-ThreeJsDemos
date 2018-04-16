@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+	<meta charset="UTF-8">
+	<title>千纸鹤</title>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+    body
+    {
+    	background-color: #ffffff;
+		margin: 0px;
+		overflow: hidden;
+		font-family:Monospace;
+		font-size:13px;
+		text-align:center;
+		text-align:center;
+		cursor: pointer;
+    }
+    a
+    {
+        color:#0078ff;
+    }
+    #info
+    {
+    	color:#000;
+    	position: absolute;
+    	top: 10px;
+    	width: 100%;
+    }
+	</style>
+</head>
+<body>
+    <!-- _blank 新窗口打开网站* noopener打开审查 -->
+	<div id="info">
+			<a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - <span id="birds"></span> webgl gpgpu birds<br/>
+			Select <span id="options"></span> birds<br/>
+			移动鼠标驱动千纸鹤吧^—^
+	</div>
+
+	<script src="js/three.js"></script>
+	<script src="js/Detector.js"></script>
+	<script src="js/stats.min.js"></script>
+	<script src="js/dat.gui.min.js"></script>
+	<script src="js/GPUComputationRenderer.js"></script>
+
+ 
+    <!-- 千纸鹤位置片元着色器 -->
+	<script id="fragmentShaderPosition" type="x-shader/x-fragment">
+		uniform float time;
+		uniform float delta;
+
+		void main(){
+			vec2 uv=gl_FragGoord.xy/resolution.xy;//??
+			vec4 tmpPos=texture2D(texturePosition,uv);
+			vec3 position=tmpPos.xyz;
+			vec3 velocity=texture2D(textureVelocity.uv).xyz;
+
+			float phase=tmPos.w;
+
+			phase=mod((phase+delta+
+				length(velocity.xz)*delta*3+
+				max(velocity.y,0.0)*delta*6.),62.83);
+
+			gl_FragGoord=vec4(position+velocity*delta*15.,phase);
+		}
+
+	</script>
+
+    <!-- 千纸鹤速度 -->
+	<script id="fragmentShaderPosition" type="x-shader/x-fragment">
+		
+		uniform float time;
+		uniform float testing;
+		uniform float delta;//0.016左右
+		uniform float seperationDistance; //20
+		uniform float alignmentDistance;//40
+		uniform float cohesionDistance;
+		uniform float freedomFactor;
+		uniform vec3 predator;
+
+		const float width=resolution.x;
+		const float height=resolution.y;
+
+		const float PI=3.141592653589793;
+		const float PI_2=PI*2.0;
+
+		float zoneRadius=40.0;
+		float zoneRadiusSquared=1600.0;
+
+		float seperationThresh=0.45;
+		float alignmentThresh=0.65;
+
+		const float UPPER_BOUNDS=BOUNDS;
+		const float LOWER_BOUNDS=-UPPER_BOUNDS;
+
+		const float SPEED_LIMIT=9.0;
+
+		float rand(vec2 co){
+			return fract(sin(dot(co.xy,vec2(12.9898,78.233)))*43758.5453);
+		}
+
+		void main(){
+			zoneRadius=seperationDistance+alignmentDistance+cohesionDistance;
+			seperationThresh
+		}
+	</script>
+</body>
+</html>
