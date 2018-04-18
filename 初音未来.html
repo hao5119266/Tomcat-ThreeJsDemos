@@ -35,7 +35,7 @@
 	<div id="info">
 	 初音未来MMD~<br/>
 	 <a href="https://github.com/mrdoob/three.js/tree/master/examples/models/mmd#readme" target="_blank" rel="noopener">MMD相关资源说明</a><br />
-	 Copyright
+	 转载来自
 	 <a href="http://www.geocities.jp/higuchuu4/index_e.htm" target="_blank" rel="noopener">原模型数据</a>
 	 <a href="http://www.nicovideo.jp/watch/sm13147122" target="_blank" rel="noopener">动作数据</a>
 	 </div>
@@ -57,6 +57,80 @@
 	 <script src="js/dat.gui.min.js"></script>
 
 	 <script>
-	 
+	 var container,stats;
+
+	 var mesh,camera,scene,renderer,effect;
+     var helper,ikHelper,physicsHelper;
+
+     var mouseX=0,mouseY=0;
+
+     var windowHalfX=window.innerWidth/2;
+     var windowHalfY=window.innerHeight/2;
+
+     var clock=new THREE.Clock();
+
+     init();
+     animate();
+
+     function init(){
+     	container=document.createElement('div');
+     	document.body.appendChild(container);
+
+     	camera=new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,1,2000);
+     	camera.position.z=30;
+
+     	scene=new THREE.Scene();
+     	scene.background=new THREE.Color(0xffffff);
+
+     	var gridHelper=new THREE.PolarGridHelper(30,10);
+     	gridHelper.position.y=-10;
+     	scene.add(gridHelper);
+
+     	var direactionLight=new THREE.direactionLight(0x887766);
+     	direactionLight.position.set(-1,1,1).normalize();
+     	scene.add(direactionLight);
+
+     	renderer=new THREE.WebGLRenderer({antialias:true});
+     	renderer.setPixelRatio(window.devicePixelRatio);
+     	renderer.setSize(window.innerWidth,window.innerHeight);
+     	container.appendChild(renderer.domElement);
+
+     	effect=new THREE.OutlineEffect(renderer);
+
+     	stats=new Stats();
+     	container.appendChild(stats.dom);
+
+     	var onProgress=function(xhr){
+     		if(xhr.lengthComputable){
+     			var percentComple=xhr.loaded/xhr.total*100;
+     			console.log(Math.round(percentComple,2)+'%downloaded');
+     		}
+     	};
+
+     	var onError =function(xhr){
+     	};
+
+     	var modelFile='models/mmd/miku_v2.pmd';
+     	var vmdFiles=['models/mmd/vmds/wavefile_v2.vmd'];
+
+     	helper=new THREE.MMDHelper();
+
+     	var loader=new THREE.MMDLoader();
+
+     	loader.load(modelFile,vmdFiles,function(object){
+     		mesh=object;
+     		mesh.position.y=-10;
+     		scene.add(mesh);
+
+     		helper.add(mesh);
+     		helper.setAnimation(mesh);
+     	})
+     }
+	 function animate() {
+				requestAnimationFrame( animate );
+				stats.begin();
+				render();
+				stats.end();
+			}
 </body>
 </html>
