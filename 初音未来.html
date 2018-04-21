@@ -86,9 +86,12 @@
      	gridHelper.position.y=-10;
      	scene.add(gridHelper);
 
-     	var direactionLight=new THREE.direactionLight(0x887766);
-     	direactionLight.position.set(-1,1,1).normalize();
-     	scene.add(direactionLight);
+     	var ambient = new THREE.AmbientLight( 0x666666 );
+		scene.add( ambient );
+
+     	var directionalLight=new THREE.DirectionalLight(0x887766);
+     	directionalLight.position.set(-1,1,1).normalize();
+     	scene.add(directionalLight);
 
      	renderer=new THREE.WebGLRenderer({antialias:true});
      	renderer.setPixelRatio(window.devicePixelRatio);
@@ -110,7 +113,7 @@
      	var onError =function(xhr){
      	};
 
-     	var modelFile='models/mmd/miku_v2.pmd';
+     	var modelFile='models/mmd/miku/miku_v2.pmd';
      	var vmdFiles=['models/mmd/vmds/wavefile_v2.vmd'];
 
      	helper=new THREE.MMDHelper();
@@ -124,13 +127,109 @@
 
      		helper.add(mesh);
      		helper.setAnimation(mesh);
-     	})
+
+     		/*IK骨架*/
+     		ikHelper=new THREE.CCDIKHelper(mesh);
+     		ikHelper.visible=false;
+     		scene.add(ikHelper);
+
+     		helper.setPhysics(mesh);
+     		physicsHelper=new THREE.MMDPhysicsHelper(mesh);
+     		physicsHelper.visible=false;
+     		scene.add(physicsHelper);
+
+     		helper.unifyAnimationDuration({afrerglow:2.0});
+
+     		initGui();
+     	},onProgress,onError);
+
+     	var controls=new THREE.OrbitControls(camera,render.domElement);
+
+     	window.addEventListener('resize',onWindowResize,false);
+
+     	var phongMaterials;
+     	var orignalMaterials;
+
+     	function makePhongMaterials(materials){
+
+     		var array=[];
+
+     		for(var i=0,il=materials.length;i<il;i++){
+     			var m=new THREE.MeshPhongMaterial();
+     			m.copy(materials[i]);
+     			m.needsUpdate=true;
+
+     			array.push(m);
+     		}
+
+     		phongMaterials=array;
+
+     	}
+     function initGui(){
+     	var api={
+     		'animation': true,
+			'gradient mapping': true,
+		    'ik': true,
+			'outline': true,
+			'physics': true,
+			'show IK bones': false,
+			'show rigid bodies': false
+     	};
+
+     	var gui=new dat.GUI();
+
+     	gui.add( api, 'animation' ).onChange( function () {
+			helper.doAnimation = api[ 'animation' ];
+		} );
+
+     	gui.add(api,'gradient mapping').onChange(function(){
+
+     		if( originalMaterials === undefined ) originalMaterials = mesh.material;
+     		if ( phongMaterials === undefined ) makePhongMaterials( mesh.material );
+
+     		if ( api[ 'gradient mapping' ] ) {
+							mesh.material = originalMaterials;
+						} else {
+							mesh.material = phongMaterials;
+						}
+     	});
+
+     	gui.add( api, 'ik' ).onChange( function () {
+						helper.doIk = api[ 'ik' ];
+					} );
+     	gui.add( api, 'outline' ).onChange( function () {
+						effect.enabled = api[ 'outline' ];
+					} );
+		gui.add( api, 'physics' ).onChange( function () {
+						helper.enablePhysics( api[ 'physics' ] );
+					} );
+		gui.add( api, 'show IK bones' ).onChange( function () {
+						ikHelper.visible = api[ 'show IK bones' ];
+					} );
+		gui.add( api, 'show rigid bodies' ).onChange( function () {
+						if ( physicsHelper !== undefined ) physicsHelper.visible = api[ 'show rigid bodies' ];
+					} );
      }
+ }
+ function onWindowResize() {
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				effect.setSize( window.innerWidth, window.innerHeight );
+			}
 	 function animate() {
 				requestAnimationFrame( animate );
 				stats.begin();
 				render();
 				stats.end();
 			}
+	function render() {
+				helper.animate( clock.getDelta() );
+				if ( physicsHelper !== undefined && physicsHelper.visible ) physicsHelper.update();
+				if ( ikHelper !== undefined && ikHelper.visible ) ikHelper.update();
+				effect.render( scene, camera );
+			}
+			</script>	
 </body>
 </html>
