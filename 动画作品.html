@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+	<head>
+		<title>MMD动画作品</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #fff;
+				color: #000;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				color: #000;
+				position: absolute;
+				top: 10px;
+				width: 100%;
+				text-align: center;
+				display:block;
+			}
+			#info a, .button { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
+		</style>
+		</head>
+
+		<body>
+		<div id="info">
+		<a href="http://www.geocities.jp/higuchuu4/index_e.htm" target="_blank" rel="noopener">模型数据来源</a>
+		<a href="http://www.nicovideo.jp/watch/sm13147122" target="_blank" rel="noopener">动作数据来源</a>
+		<a href="http://www.nicovideo.jp/watch/sm11938255" target="_blank" rel="noopener">动画原型</a><br/>
+		<a href="http://www.nicovideo.jp/watch/sm19168559" target="_blank" rel="noopener">相机视角切换数据来源</a>
+		</div>
+
+		<script src="js/three.js"></script>
+		<script src="js/mmdparser.min.js"></script>
+		<script src="js/ammo.js"></script>
+		<script src="js/TGALoader.js"></script>
+		<script src="js/MMDLoader.js"></script>
+		<script src="js/OutlineEffect.js"></script>
+		<script src="js/CCDIKSolver.js"></script>
+		<script src="js/MMDPhysics.js"></script>
+
+		<script src="js/Detector.js"></script>
+		<script src="js/stats.min.js"></script>
+
+        <script>
+        	var container;
+        	var mesh,camera,scene,renderer,effect;
+
+        	var ready=false;
+        	var mouseX=0,mouseY=0;
+
+        	var windowHalfX=window.innerWidth/2;
+        	var windowHalfY=window.innerHeight/2;
+
+        	var clock=new THREE.Clock;
+
+        	var modelFile = 'models/mmd/miku/miku_v2.pmd';
+			var vmdFiles = [ 'models/mmd/vmds/wavefile_v2.vmd' ];
+			var cameraFiles = [ 'models/mmd/vmds/wavefile_camera.vmd' ];
+			var audioFile = 'models/mmd/audios/wavefile_short.mp3';
+			var audioParams = { delayTime: 160 * 1 / 30 };
+
+			var onProgress=function(xhr){
+        			if ( xhr.lengthComputable ) {
+						var percentCompvare = xhr.loaded / xhr.total * 100;
+						console.log( Math.round(percentCompvare, 2) + '% downloaded' );
+					}
+        	};
+
+        	var onError = function ( xhr ) {
+			};
+
+        	init();
+        	animate();
+
+        	function init(){
+        		container();
+
+        		camera();
+
+        		scene();
+
+        		light();
+
+        		renderer();
+
+        		effect();
+
+				helper = new THREE.MMDHelper();
+
+				loader();
+
+
+
+        	}
+
+        	function container(){
+        		container = document.createElement( 'div' );
+				document.body.appendChild( container );
+        	}
+
+        	function camera(){
+        		camera=new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+        	}
+
+        	function scene(){
+        		scene=new THREE.Scene();
+        		scene.background = new THREE.Color( 0x40E0D0 );
+        	}
+
+        	function light(){      		
+				var ambient = new THREE.AmbientLight( 0x666666 );
+				scene.add( ambient );
+
+				var directionalLight = new THREE.DirectionalLight( 0x887766 );
+				directionalLight.position.set( -1, 1, 1 ).normalize();
+				scene.add( directionalLight );
+        	}
+
+        	function renderer(){
+        		//打开抗齿距
+        		renderer = new THREE.WebGLRenderer( { antialias: true } );
+
+        		//兼容高清屏
+				renderer.setPixelRatio( window.devicePixelRatio );
+
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+        	}
+          
+        	function  effect(){
+              //映射
+              effect = new THREE.OutlineEffect( renderer );
+        	}
+
+        	function loader(){
+        		var loader = new THREE.MMDLoader();
+
+        		loader.load( modelFile, vmdFiles, function ( object ) {
+        			mesh=object;
+
+        			helper.add(mesh);
+        			helper.setAnimation(mesh);
+        			helper.setPhysics(mesh);
+
+        			loader.loadVmds(cameraFiles,function(vmd){
+        				helper.setCamera( camera );
+
+        				loader.pourVmdIntoCamera( camera, vmd );
+						helper.setCameraAnimation( camera );
+
+						loader.loadAudio( audioFile, function ( audio, listener ) {
+							listener.position.z = 1;
+							helper.setAudio( audio, listener, audioParams );
+
+							helper.unifyAnimationDuration();
+
+							scene.add( audio );
+							scene.add( listener );
+							scene.add( mesh );
+
+							ready = true;
+						}, onProgress, onError );
+
+					},onProgress,onError);
+
+					}, onProgress, onError );
+
+					document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+
+					window.addEventListener( 'resize', onWindowResize, false );
+
+        	}
+
+        	function onWindowResize() {
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				effect.setSize( window.innerWidth, window.innerHeight );
+			}
+
+			function onDocumentMouseMove( event ) {
+				mouseX = ( event.clientX - windowHalfX ) / 2;
+				mouseY = ( event.clientY - windowHalfY ) / 2;
+			}
+
+		    function animate() {
+				requestAnimationFrame( animate );
+				render();
+			}
+
+			function render() {
+				if ( ready ) {
+					helper.animate( clock.getDelta() );
+				}
+				effect.render( scene, camera );
+			}
+
+        </script>
+   </body>
+</html>
